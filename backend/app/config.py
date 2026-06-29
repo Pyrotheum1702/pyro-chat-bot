@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 30    # per client IP, on chat + upload
 
+    # --- agent ---
+    agent_model: str = ""              # tool-calling model; defaults to chat_model
+    agent_max_steps: int = 6           # max tool-call iterations per turn
+    tavily_api_key: str = ""           # optional; enables Tavily web search
+
     # --- paths & server ---
     data_dir: Path = PROJECT_ROOT / "backend" / "data"
     frontend_dist: Path = PROJECT_ROOT / "frontend" / "dist"

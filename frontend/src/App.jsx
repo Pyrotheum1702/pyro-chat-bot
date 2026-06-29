@@ -10,6 +10,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [streaming, setStreaming] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [mode, setMode] = useState("chat"); // "chat" (RAG) | "agent" (tools)
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -61,17 +62,20 @@ export default function App() {
     const trimmed = text.trim();
     if (!trimmed || streaming) return;
 
-    // Optimistically add the user message + an empty assistant placeholder.
     setMessages((prev) => [
       ...prev,
       { role: "user", content: trimmed },
-      { role: "assistant", content: "", sources: [] },
+      { role: "assistant", content: "", sources: [], tools: [] },
     ]);
     setStreaming(true);
     const startingNew = convId == null;
 
     await api.streamChat(
-      { message: trimmed, conversationId: convId },
+      {
+        message: trimmed,
+        conversationId: convId,
+        path: mode === "agent" ? "/api/agent" : "/api/chat",
+      },
       {
         onStart: (ev) => {
           if (startingNew) setConvId(ev.conversation_id);
@@ -82,6 +86,29 @@ export default function App() {
             const next = prev.slice();
             const last = next[next.length - 1];
             next[next.length - 1] = { ...last, content: last.content + tok };
+            return next;
+          }),
+        onTool: (ev) =>
+          setMessages((prev) => {
+            const next = prev.slice();
+            const last = next[next.length - 1];
+            const tools = [...(last.tools || []), { name: ev.name, input: ev.input, output: null }];
+            next[next.length - 1] = { ...last, tools };
+            return next;
+          }),
+        onToolResult: (ev) =>
+          setMessages((prev) => {
+            const next = prev.slice();
+            const last = next[next.length - 1];
+            const tools = (last.tools || []).slice();
+            // attach the result to the most recent pending call of this tool
+            for (let i = tools.length - 1; i >= 0; i--) {
+              if (tools[i].name === ev.name && tools[i].output == null) {
+                tools[i] = { ...tools[i], output: ev.output };
+                break;
+              }
+            }
+            next[next.length - 1] = { ...last, tools };
             return next;
           }),
         onError: (msg) =>
@@ -97,6 +124,7 @@ export default function App() {
         onDone: () => {
           setStreaming(false);
           refreshConversations();
+          refreshDocuments(); // agent may have ingested a URL
         },
       }
     );
@@ -113,12 +141,17 @@ export default function App() {
         onUpload={handleUpload}
         uploading={uploading}
       />
-      <Chat messages={messages} streaming={streaming} onSend={handleSend} />
+      <Chat
+        messages={messages}
+        streaming={streaming}
+        onSend={handleSend}
+        mode={mode}
+        onModeChange={setMode}
+      />
     </div>
   );
 }
 
-// Replace fields on the last (streaming assistant) message.
 function patchLast(prev, patch) {
   const next = prev.slice();
   next[next.length - 1] = { ...next[next.length - 1], ...patch };

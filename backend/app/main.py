@@ -9,7 +9,7 @@ from starlette.responses import FileResponse
 
 from . import db, security
 from .config import get_settings
-from .routers import chat, conversations, documents
+from .routers import agent, chat, conversations, documents
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,6 +43,7 @@ def health():
 
 # Rate-limit the expensive / abusable endpoints (LLM calls, uploads).
 app.include_router(chat.router, prefix="/api", dependencies=[Depends(security.rate_limit)])
+app.include_router(agent.router, prefix="/api", dependencies=[Depends(security.rate_limit)])
 app.include_router(documents.router, prefix="/api", dependencies=[Depends(security.rate_limit)])
 app.include_router(conversations.router, prefix="/api")
 

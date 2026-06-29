@@ -43,6 +43,13 @@ a paid LLM.
 **Secrets**
 - API keys come from `.env` (gitignored, with `!.env.example` so only the template is committed); never hardcoded, never logged, never copied into the Docker image (passed as env vars).
 
+## Agent tools
+
+The optional **agent mode** ([`tools.py`](backend/app/tools.py), [`agent.py`](backend/app/agent.py)) lets the model call tools. Notes:
+- **`calculator`** uses a restricted AST evaluator (no `eval()`), allows only numeric ops + a math allow-list, and caps exponents — so it can't import modules or run arbitrary code.
+- **`ingest_url` / `web_search`** make **outbound** requests. `ingest_url` is restricted to `http(s)` URLs with a 5 MB response cap, but is still a basic **SSRF** vector (it can reach internal/link-local hosts from the server). On an untrusted network, restrict egress or disable agent mode.
+- **All tools run automatically without a confirmation step.** Only **read-only / additive** tools are included by design — there are intentionally **no** side-effecting tools (email, shell, DB writes). If you add one, gate it behind a human-confirmation step first (see the dedicated-tool gating note in the README's tools discussion).
+
 ## Configuration
 
 All tunable via `.env` (see [.env.example](.env.example)):

@@ -14,6 +14,16 @@ See the [Definition of Done](DEFINITION_OF_DONE.md) for the full scope and accep
 - Ask questions → the app retrieves the most relevant chunks and the LLM answers from them, **streaming** token-by-token, with the **sources** shown.
 - Conversations and the vector store **persist** across restarts.
 
+## Agent mode (tools)
+
+Toggle **Agent (tools)** in the chat header to use a tool-calling agent instead of plain RAG. Tools:
+- **search_documents** — on-demand semantic search over your uploaded docs
+- **web_search** — public web search (Tavily if `TAVILY_API_KEY` is set, else DuckDuckGo, no key)
+- **calculator** — safe arithmetic
+- **ingest_url** — fetch a web page and add it to the knowledge base
+
+The model decides which tools to call; the UI shows each invocation. Needs a tool-capable model (`AGENT_MODEL`, defaults to `CHAT_MODEL`). Only read-only/additive tools are included — see [SECURITY.md](SECURITY.md) for the rationale.
+
 ## Architecture
 
 ```

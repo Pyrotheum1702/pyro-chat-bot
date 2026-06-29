@@ -35,10 +35,10 @@ export async function uploadDocument(file) {
 
 // Streams the chat response, parsing the SSE events the backend emits.
 // handlers: { onStart, onSources, onToken, onError, onDone }
-export async function streamChat({ message, conversationId }, handlers) {
+export async function streamChat({ message, conversationId, path = "/api/chat" }, handlers) {
   let res;
   try {
-    res = await fetch(`${BASE}/api/chat`, {
+    res = await fetch(`${BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, conversation_id: conversationId ?? null }),
@@ -84,6 +84,8 @@ export async function streamChat({ message, conversationId }, handlers) {
         if (ev.type === "start") handlers.onStart?.(ev);
         else if (ev.type === "sources") handlers.onSources?.(ev.sources || []);
         else if (ev.type === "token") handlers.onToken?.(ev.value);
+        else if (ev.type === "tool") handlers.onTool?.(ev);
+        else if (ev.type === "tool_result") handlers.onToolResult?.(ev);
         else if (ev.type === "error") handlers.onError?.(ev.message);
         // "done" is handled by the finally block below
       }

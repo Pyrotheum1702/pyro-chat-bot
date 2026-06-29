@@ -57,3 +57,16 @@ def test_safe_filename_blocks_traversal():
 def test_empty_message_rejected():
     r = client.post("/api/chat", json={"message": "   "})
     assert r.status_code == 400
+
+
+def test_calculator_tool_is_safe():
+    from app.tools import calculator
+
+    assert calculator.invoke({"expression": "2 * (3 + 4)"}) == "14"
+    # no code execution / imports
+    assert "Error" in calculator.invoke({"expression": "__import__('os').system('echo hi')"})
+
+
+def test_agent_modules_import():
+    import app.agent  # noqa: F401
+    import app.tools  # noqa: F401

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function Chat({ messages, streaming, onSend }) {
+export default function Chat({ messages, streaming, onSend, mode, onModeChange }) {
   const [draft, setDraft] = useState("");
   const endRef = useRef(null);
 
@@ -17,10 +17,28 @@ export default function Chat({ messages, streaming, onSend }) {
 
   return (
     <main className="chat">
+      <header className="chat-header">
+        <div className="mode-toggle">
+          {["chat", "agent"].map((m) => (
+            <button
+              key={m}
+              className={"mode" + (mode === m ? " active" : "")}
+              onClick={() => !streaming && onModeChange(m)}
+              disabled={streaming}
+              title={m === "chat" ? "RAG over your documents" : "Tool-using agent"}
+            >
+              {m === "chat" ? "Chat (RAG)" : "Agent (tools)"}
+            </button>
+          ))}
+        </div>
+      </header>
+
       <div className="messages">
         {messages.length === 0 && (
           <div className="empty">
-            Upload a document in the sidebar, then ask a question about it.
+            {mode === "agent"
+              ? "Agent mode: I can search your docs, search the web, do math, and ingest URLs."
+              : "Upload a document in the sidebar, then ask a question about it."}
           </div>
         )}
 
@@ -28,6 +46,23 @@ export default function Chat({ messages, streaming, onSend }) {
           const isLast = i === messages.length - 1;
           return (
             <div key={i} className={"msg " + m.role}>
+              {m.role === "assistant" && m.tools && m.tools.length > 0 && (
+                <div className="tools">
+                  {m.tools.map((t, k) => (
+                    <details key={k} className="tool">
+                      <summary>
+                        🔧 {t.name}
+                        {t.output == null ? " …" : ""}
+                      </summary>
+                      <div className="tool-body">
+                        <div className="muted">input: {JSON.stringify(t.input)}</div>
+                        {t.output != null && <div className="snippet">{t.output}</div>}
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              )}
+
               <div className="bubble">
                 {m.content || (streaming && isLast ? "…" : "")}
               </div>
@@ -61,7 +96,11 @@ export default function Chat({ messages, streaming, onSend }) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) submit(e);
           }}
-          placeholder="Ask a question…  (Enter to send, Shift+Enter for newline)"
+          placeholder={
+            mode === "agent"
+              ? "Ask the agent…  (it can use tools)"
+              : "Ask a question…  (Enter to send, Shift+Enter for newline)"
+          }
           rows={2}
         />
         <button type="submit" disabled={streaming || !draft.trim()}>
