@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8017:8017"
+    # Loads FIREWORKS_API_KEY (and anything else) from your local .env.
+    env_file:
+      - .env
+    environment:
+      # Persist Chroma + SQLite + uploads in the named volume below.
+      - DATA_DIR=/data
+      - PORT=8017
+    volumes:
+      - ragdata:/data
+
+volumes:
+  ragdata:

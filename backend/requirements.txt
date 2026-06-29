@@ -1,0 +1,19 @@
+# Web framework
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9         # file uploads
+pydantic-settings>=2.2
+
+# LangChain + RAG
+langchain>=0.3,<0.4
+langchain-core>=0.3,<0.4
+langchain-community>=0.3,<0.4   # document loaders
+langchain-text-splitters>=0.3,<0.4
+langchain-fireworks>=0.2        # ChatFireworks + FireworksEmbeddings
+langchain-chroma>=0.1.4         # Chroma vector store
+chromadb>=0.5
+pypdf>=4.2                      # PDF loader
+
+# Tests
+pytest>=8.0
+httpx>=0.27                     # TestClient
