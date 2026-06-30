@@ -114,6 +114,31 @@ curated from my CV. Editing those files and restarting re-seeds the vector store
 that's how I keep the bot accurate. Personal source docs (CV, etc.) are gitignored
 and never committed.
 
+## Data & secrets
+
+Nothing sensitive or environment-specific lives in git — it's provisioned or
+regenerated per environment. This matters when you clone elsewhere (e.g. the VPS):
+
+| Artifact | In git? | How a fresh clone gets it |
+|----------|---------|---------------------------|
+| `.env` (API keys) | ❌ gitignored | `cp .env.example .env`, fill `FIREWORKS_API_KEY` (+ optional `TAVILY_API_KEY`) — per environment |
+| `*-CV.pdf` (personal source doc) | ❌ gitignored | Not needed — see below |
+| `backend/knowledge/*.md` (the facts) | ✅ committed | Travels automatically |
+| `backend/data/chroma` (vector store) | ❌ gitignored | **Rebuilt on first boot** from the knowledge pack |
+| `backend/data/*.sqlite` (chat history) | ❌ gitignored | Starts empty; local to each deployment |
+
+- **Secrets are per-environment.** Each place you run PyroBot needs its own `.env`; the
+  Fireworks key is never committed and never sent to the browser. The CV is only *source
+  material* — the bot's knowledge is the committed `knowledge/*.md` pack, so a clone fully
+  "knows about Pyro" without it.
+- **The vector store is reproducible.** On first boot, `seed_knowledge()` ingests
+  `knowledge/*.md` into a fresh Chroma store and writes a `.seeded` sentinel so it only
+  happens once (a small one-time Fireworks embedding cost per environment).
+- **To update what the bot knows:** edit `knowledge/*.md`, delete `backend/data/.seeded`
+  (or the whole `data/` dir), and restart to re-seed. Editing the CV alone does nothing.
+- **`backend/data/` is not backed up by git.** To preserve real conversation history or a
+  curated vector store, back up that directory (or the Docker `ragdata` volume) separately.
+
 ## Security
 
 Public-facing hardening is part of the demo: path-traversal-safe uploads, rate
