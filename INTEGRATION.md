@@ -42,13 +42,22 @@ Allowed methods: `GET, POST, OPTIONS`. Allowed request header: `Content-Type`.
 | Limit | Default | Applies to | On exceed |
 |-------|---------|-----------|-----------|
 | Requests / IP / minute | `30` | `/api/chat`, `/api/documents` | `429` |
+| **Daily cost cap** | **`$1.00`** | `/api/chat` | `429` until next UTC day |
 | Message length | `8000` chars | `/api/chat` | `413` |
 | Upload size | `20` MB | `/api/documents` | `413` |
 | Agent tool steps / turn | `6` | `/api/chat` | stream ends with a "stopped" note |
 
-All are configurable via env (`RATE_LIMIT_PER_MINUTE`, `MAX_MESSAGE_CHARS`,
-`MAX_UPLOAD_MB`, `AGENT_MAX_STEPS`). Rate limiting is in-memory per IP (fixed window);
-behind a reverse proxy, forward the real client IP.
+All are configurable via env (`RATE_LIMIT_PER_MINUTE`, `DAILY_COST_CAP_USD`,
+`MAX_MESSAGE_CHARS`, `MAX_UPLOAD_MB`, `AGENT_MAX_STEPS`). Rate limiting is in-memory per
+IP (fixed window); behind a reverse proxy, forward the real client IP.
+
+**Daily cost cap.** A hard kill-switch: each chat turn's spend is estimated from token
+counts and accumulated per UTC day. Once `DAILY_COST_CAP_USD` (default `1.0`; `0`
+disables) is reached, `/api/chat` returns `429` with
+`"…reached its daily usage limit…"` until the next day. `GET /api/health` reports
+`daily_cost_cap_usd` and `spent_today_usd`. The estimate uses
+`USD_PER_MILLION_INPUT_TOKENS` / `USD_PER_MILLION_OUTPUT_TOKENS` — tune them to your
+model so the cap reflects real cost.
 
 ---
 
@@ -255,7 +264,7 @@ HTTP status is already `200` by then).
 | `400` | Empty message · unsupported upload type · unextractable file |
 | `404` | Unknown conversation id |
 | `413` | Message too long · upload too large |
-| `429` | Rate limit exceeded |
+| `429` | Rate limit exceeded · or the daily cost cap is reached |
 | `500` | Internal failure (details are logged server-side, never leaked) |
 
 ---

@@ -105,7 +105,14 @@ docker run --rm -v deploy_ragdata:/data -v "$PWD":/backup alpine \
   tar czf /backup/ragdata-backup.tgz -C /data .
 ```
 
+## Cost cap
+A hard **daily spend cap** is built in — `DAILY_COST_CAP_USD` (default **$1.00/UTC
+day**). Once the day's estimated spend is reached, chat returns `429` until the next
+day, so a traffic spike can't drain the Fireworks bill. Tune it (and the per-token
+price estimates) in `.env`; check `GET /api/health` for `spent_today_usd`. See
+[SECURITY.md](SECURITY.md).
+
 ## Before you go fully public (recommended)
-Per [NEXT_STEPS.md](NEXT_STEPS.md): add a **hard daily cost cap**, make sessions
-**ephemeral**, and **remove the visitor-facing upload** so anonymous users can't write
-to the knowledge base or run up the Fireworks bill. See [SECURITY.md](SECURITY.md).
+The cost cap above is in place. Still on the list per [NEXT_STEPS.md](NEXT_STEPS.md):
+make sessions **ephemeral** and **remove the visitor-facing upload** so anonymous users
+can't write to the knowledge base.

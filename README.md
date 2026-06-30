@@ -110,6 +110,9 @@ All optional except the key. Set in `.env` (see [.env.example](.env.example)):
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | `1000` / `150` | Splitter settings. |
 | `MAX_HISTORY` | `10` | Prior messages fed back into the prompt. |
 | `TAVILY_API_KEY` | — | Optional. Enables reliable `web_search`. |
+| `DAILY_COST_CAP_USD` | `1.0` | Hard daily spend cap (USD, UTC day) on chat; `0` disables. Returns `429` once hit. |
+| `USD_PER_MILLION_INPUT_TOKENS` / `…OUTPUT…` | `0.9` / `0.9` | Price estimate used to meter the cap — tune to your model. |
+| `RATE_LIMIT_PER_MINUTE` | `30` | Requests/min per IP on chat + upload. |
 | `CORS_ORIGINS` | `localhost:5173` | JSON list of origins allowed to call the API cross-origin. |
 | `EMBED_ORIGINS` | `[]` | JSON list of origins allowed to `<iframe>` the app (e.g. your site). Empty = framing blocked. |
 | `DATA_DIR` | `backend/data` | Where Chroma + SQLite live (Docker sets `/data`). |

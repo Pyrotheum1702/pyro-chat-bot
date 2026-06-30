@@ -16,7 +16,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from .. import agent, db
+from .. import agent, cost, db
 from ..config import get_settings
 from ..schemas import ChatRequest
 
@@ -66,6 +66,9 @@ async def chat(req: ChatRequest):
         answer = "".join(parts).strip()
         if answer:
             db.add_message(conversation_id, "assistant", answer)
+            # Record estimated spend against the daily cap. Prompt ~= history + message.
+            prompt_text = message + " ".join(m["content"] for m in history)
+            cost.METER.add(cost.estimate_cost_usd(prompt_text, answer))
         yield _sse({"type": "done"})
 
     return StreamingResponse(

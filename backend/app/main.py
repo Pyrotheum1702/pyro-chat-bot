@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
 
-from . import db, rag, security
+from . import cost, db, rag, security
 from .config import get_settings
 from .routers import chat, conversations, documents
 
@@ -56,11 +56,21 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model": settings.chat_model}
+    return {
+        "status": "ok",
+        "model": settings.chat_model,
+        "daily_cost_cap_usd": settings.daily_cost_cap_usd,
+        "spent_today_usd": round(cost.METER.spent_today(), 4),
+    }
 
 
 # Rate-limit the expensive / abusable endpoints (LLM calls, uploads).
-app.include_router(chat.router, prefix="/api", dependencies=[Depends(security.rate_limit)])
+# Chat also enforces the daily cost cap (hard kill-switch on LLM spend).
+app.include_router(
+    chat.router,
+    prefix="/api",
+    dependencies=[Depends(security.rate_limit), Depends(cost.cost_guard)],
+)
 app.include_router(documents.router, prefix="/api", dependencies=[Depends(security.rate_limit)])
 app.include_router(conversations.router, prefix="/api")
 

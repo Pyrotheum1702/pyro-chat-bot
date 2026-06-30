@@ -31,9 +31,10 @@ ask "who is Pyro?", confirm a grounded answer + a `search_documents` tool call.
 - **Monthly budget + expected traffic** — sizes the daily cost cap + public model choice
 
 ### 3. Make it "public-shaped"
+- ✅ **Cost guardrail** — DONE: hard daily spend cap (`DAILY_COST_CAP_USD`, default $1/UTC
+  day) in `cost.py`; chat returns 429 once hit. See SECURITY.md / DEPLOY.md.
 - Remove the visitor-facing **document upload** (keep a private path to update the KB)
 - **Ephemeral per-visitor sessions** (drop the shared conversation sidebar)
-- **Cost guardrail**: hard daily request/token cap (kill-switch so a viral day can't drain Fireworks)
 
 ### 4. Embed on the website  — DECIDED: iframe
 Floating `<iframe>` on pyrotheum1702.com (decided over a JS widget for speed — reuses

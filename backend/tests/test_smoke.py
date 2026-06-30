@@ -70,3 +70,22 @@ def test_calculator_tool_is_safe():
 def test_agent_modules_import():
     import app.agent  # noqa: F401
     import app.tools  # noqa: F401
+
+
+def test_health_reports_cost_cap():
+    body = client.get("/api/health").json()
+    assert "daily_cost_cap_usd" in body
+    assert "spent_today_usd" in body
+
+
+def test_daily_cost_cap_blocks_chat():
+    """When the day's estimated spend exceeds the cap, /api/chat returns 429."""
+    from app import cost
+
+    before = cost.METER._spent  # noqa: SLF001 (test introspection)
+    try:
+        cost.METER.add(10_000.0)  # blow past any sane cap
+        r = client.post("/api/chat", json={"message": "hello"})
+        assert r.status_code == 429
+    finally:
+        cost.METER._spent = before  # restore so other tests are unaffected

@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 30    # per client IP, on chat + upload
 
+    # --- cost guardrail (hard daily kill-switch on estimated LLM spend) ---
+    daily_cost_cap_usd: float = 1.0            # per UTC day; <= 0 disables the cap
+    usd_per_million_input_tokens: float = 0.9  # estimate — tune to your provider/model
+    usd_per_million_output_tokens: float = 0.9 # estimate — tune to your provider/model
+
     # --- agent ---
     agent_model: str = ""              # tool-calling model; defaults to chat_model
     agent_max_steps: int = 6           # max tool-call iterations per turn

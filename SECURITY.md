@@ -30,6 +30,9 @@ a paid LLM.
 **Rate limiting** ([`security.py`](backend/app/security.py))
 - In-memory, per-client-IP fixed window on `/api/chat` and `/api/documents` (`RATE_LIMIT_PER_MINUTE`, default 30). Disable with `RATE_LIMIT_ENABLED=false`.
 
+**Cost guardrail** ([`cost.py`](backend/app/cost.py))
+- Hard **daily spend cap** on chat (`DAILY_COST_CAP_USD`, default **$1.00/UTC day**). Each turn's cost is estimated from token counts and accumulated; once the cap is hit, `/api/chat` returns `429` until the next day. A kill-switch so a traffic spike or abuse can't run up the Fireworks bill. In-memory/per-process (use a shared store behind multiple workers). `GET /api/health` reports `spent_today_usd`.
+
 **Transport / headers** ([`main.py`](backend/app/main.py), [`security.py`](backend/app/security.py))
 - Security headers on every response: `X-Content-Type-Options: nosniff`, a restrictive `Content-Security-Policy` (`object-src 'none'`, `base-uri 'self'`), `Referrer-Policy`, `Permissions-Policy`.
 - **Framing is denied by default** (`X-Frame-Options: DENY` + CSP `frame-ancestors 'none'`). To embed the app on a trusted site, set `EMBED_ORIGINS` to that origin — the backend then emits `frame-ancestors 'self' <origins>` and drops `X-Frame-Options`. Only list origins you control; this is the clickjacking boundary.
