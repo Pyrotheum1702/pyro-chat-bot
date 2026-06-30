@@ -1,6 +1,6 @@
-# 🔥 Pyro Chat Bot
+# 🔥 PyroBot
 
-> **Chat with Pyro** — an AI assistant that knows me, embedded on
+> **PyroBot** — an AI assistant that knows me, embedded on
 > [pyrotheum1702.com](https://pyrotheum1702.com). Ask it about my work, experience,
 > and projects and it answers in real time, grounded in a curated knowledge base.
 
