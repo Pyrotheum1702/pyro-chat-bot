@@ -108,23 +108,34 @@ def _web_search(query: str) -> str:
         except Exception:
             logger.exception("Tavily search failed; falling back to DuckDuckGo")
 
-    try:
-        from duckduckgo_search import DDGS
+    # 2. DuckDuckGo (no key). `ddgs` is the maintained package; fall back to the
+    #    old `duckduckgo_search`. Both can fail on some TLS stacks — notably the
+    #    macOS system Python built against LibreSSL, which lacks TLS 1.3.
+    for modname in ("ddgs", "duckduckgo_search"):
+        try:
+            mod = __import__(modname, fromlist=["DDGS"])
+            with mod.DDGS() as ddg:
+                items = list(ddg.text(query, max_results=5))
+            if items:
+                return "\n\n".join(
+                    f"{r.get('title', '')}\n{r.get('href') or r.get('url', '')}\n{r.get('body', '')}"
+                    for r in items
+                )
+        except ImportError:
+            continue
+        except Exception:
+            logger.exception("%s web search failed", modname)
+            continue
 
-        with DDGS() as ddgs:
-            items = list(ddgs.text(query, max_results=5))
-        if items:
-            return "\n\n".join(
-                f"{r.get('title', '')}\n{r.get('href', '')}\n{r.get('body', '')}"
-                for r in items
-            )
-        return "No web results found."
-    except ImportError:
-        return ("Web search is not configured. Set TAVILY_API_KEY or install "
-                "duckduckgo-search.")
-    except Exception as e:
-        logger.exception("web search failed")
-        return f"Web search failed: {e}"
+    # Nothing worked — be honest about *why* so the model doesn't tell the user
+    # "the web has no results" when web search is simply unavailable.
+    if not s.tavily_api_key:
+        return (
+            "Web search is unavailable: no TAVILY_API_KEY is configured and the "
+            "keyless DuckDuckGo fallback isn't working in this environment. "
+            "Set TAVILY_API_KEY to enable web search."
+        )
+    return "Web search returned no results for this query."
 
 
 @tool

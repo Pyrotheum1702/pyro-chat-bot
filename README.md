@@ -10,19 +10,13 @@ See the [Definition of Done](DEFINITION_OF_DONE.md) for the full scope and accep
 
 ## What it does
 
-- Upload `.pdf` / `.txt` / `.md` documents → they're chunked, embedded, and stored in a vector DB.
-- Ask questions → the app retrieves the most relevant chunks and the LLM answers from them, **streaming** token-by-token, with the **sources** shown.
-- Conversations and the vector store **persist** across restarts.
+A single, seamless chat backed by a **tool-using agent (agentic RAG)** — no mode toggle. The model decides what to do per message:
+- **`search_documents`** — semantic search over the knowledge base (the "About Me" pack); the system prompt makes it ground every answer about the subject in retrieved content rather than guessing.
+- **`web_search`** — public web search (Tavily if `TAVILY_API_KEY` is set, else a keyless DuckDuckGo fallback).
+- **`calculator`** — safe arithmetic.
+- **`ingest_url`** — fetch a web page and add it to the knowledge base.
 
-## Agent mode (tools)
-
-Toggle **Agent (tools)** in the chat header to use a tool-calling agent instead of plain RAG. Tools:
-- **search_documents** — on-demand semantic search over your uploaded docs
-- **web_search** — public web search (Tavily if `TAVILY_API_KEY` is set, else DuckDuckGo, no key)
-- **calculator** — safe arithmetic
-- **ingest_url** — fetch a web page and add it to the knowledge base
-
-The model decides which tools to call; the UI shows each invocation. Needs a tool-capable model (`AGENT_MODEL`, defaults to `CHAT_MODEL`). Only read-only/additive tools are included — see [SECURITY.md](SECURITY.md) for the rationale.
+Responses **stream** token-by-token; each tool call is shown in the UI. Conversations and the vector store **persist** across restarts. The knowledge pack in [`backend/knowledge/`](backend/knowledge/) is auto-seeded into the vector store on first startup. Only read-only / additive tools are included — see [SECURITY.md](SECURITY.md).
 
 ## Architecture
 
@@ -31,9 +25,9 @@ React SPA (Vite)                         dev :5173  ·  prod: served by backend
   │  POST /api/chat (SSE stream) · POST/GET /api/documents · GET /api/conversations
   ▼
 FastAPI backend (:8017)
-  ├─ RAG (LangChain): retrieve top-k ─▶ prompt ─▶ Fireworks LLM ─▶ stream tokens
-  ├─ Ingestion: load ─▶ chunk ─▶ embed (Fireworks) ─▶ Chroma
-  ├─ Chroma   (vectors, on disk)
+  ├─ Agent loop (LangChain): model ⇄ tools (search_documents · web_search ·
+  │                          calculator · ingest_url) ─▶ Fireworks LLM ─▶ stream
+  ├─ Vector store: load ─▶ chunk ─▶ embed (Fireworks) ─▶ Chroma   (+ startup seed)
   └─ SQLite   (conversations + messages)
 ```
 

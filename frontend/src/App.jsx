@@ -10,7 +10,6 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [streaming, setStreaming] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [mode, setMode] = useState("chat"); // "chat" (RAG) | "agent" (tools)
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -71,11 +70,7 @@ export default function App() {
     const startingNew = convId == null;
 
     await api.streamChat(
-      {
-        message: trimmed,
-        conversationId: convId,
-        path: mode === "agent" ? "/api/agent" : "/api/chat",
-      },
+      { message: trimmed, conversationId: convId },
       {
         onStart: (ev) => {
           if (startingNew) setConvId(ev.conversation_id);
@@ -141,13 +136,7 @@ export default function App() {
         onUpload={handleUpload}
         uploading={uploading}
       />
-      <Chat
-        messages={messages}
-        streaming={streaming}
-        onSend={handleSend}
-        mode={mode}
-        onModeChange={setMode}
-      />
+      <Chat messages={messages} streaming={streaming} onSend={handleSend} />
     </div>
   );
 }

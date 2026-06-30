@@ -44,6 +44,7 @@ class Settings(BaseSettings):
 
     # --- paths & server ---
     data_dir: Path = PROJECT_ROOT / "backend" / "data"
+    knowledge_dir: Path = PROJECT_ROOT / "backend" / "knowledge"
     frontend_dist: Path = PROJECT_ROOT / "frontend" / "dist"
     cors_origins: List[str] = [
         "http://localhost:5173",

@@ -36,7 +36,9 @@ CREATE TABLE IF NOT EXISTS documents (
 
 @contextmanager
 def _conn():
-    conn = sqlite3.connect(str(get_settings().sqlite_path))
+    path = get_settings().sqlite_path
+    path.parent.mkdir(parents=True, exist_ok=True)  # resilient if the data dir is missing
+    conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     try:

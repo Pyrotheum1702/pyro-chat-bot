@@ -16,7 +16,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from .. import db, rag
+from .. import agent, db
 from ..config import get_settings
 from ..schemas import ChatRequest
 
@@ -54,7 +54,7 @@ async def chat(req: ChatRequest):
         yield _sse({"type": "start", "conversation_id": conversation_id})
         parts: list[str] = []
         try:
-            async for event in rag.astream_answer(message, history):
+            async for event in agent.astream_agent(message, history):
                 if event.get("type") == "token":
                     parts.append(event["value"])
                 yield _sse(event)
