@@ -145,6 +145,8 @@ re-seeding. Set `ALLOW_PUBLIC_UPLOAD=true` to re-enable (then `POST` accepts `.p
 `.txt` / `.md`, ≤ 20 MB) — only do that behind auth or a private network. The same flag
 gates the agent's `ingest_url` tool, which also writes to the KB.
 
+See [INGESTION.md](INGESTION.md) for the curate-and-re-seed workflow.
+
 ---
 
 ## 2. Client examples

@@ -128,6 +128,9 @@ curated from my CV. Editing those files and restarting re-seeds the vector store
 that's how I keep the bot accurate. Personal source docs (CV, etc.) are gitignored
 and never committed.
 
+See [INGESTION.md](INGESTION.md) for the full workflow: supported file types, how
+seeding works, updating the KB on prod, and why live upload is disabled.
+
 ## Data & secrets
 
 Nothing sensitive or environment-specific lives in git — it's provisioned or
