@@ -1,22 +1,33 @@
-# Learning LangChain — RAG Chatbot
+# 🔥 Pyro Chat Bot
 
-**Status:** 🟨 In progress · **Type:** Self-directed learning build
+> **Chat with Pyro** — an AI assistant that knows me, embedded on
+> [pyrotheum1702.com](https://pyrotheum1702.com). Ask it about my work, experience,
+> and projects and it answers in real time, grounded in a curated knowledge base.
 
-A chatbot web app that answers questions grounded in documents you upload
-(Retrieval-Augmented Generation), built to learn LangChain end-to-end.
-FastAPI + React, streaming responses, persistent chat history, Dockerized.
+Built by **Nguyen Quang Duoc (Pyro)** — a full-stack game & systems engineer — both
+as a live "talk to me" widget for visitors and as a demonstration of production
+AI-engineering: agentic RAG, tool use, streaming, and security hardening.
 
-See the [Definition of Done](DEFINITION_OF_DONE.md) for the full scope and acceptance criteria.
+---
 
-## What it does
+## What it is
 
-A single, seamless chat backed by a **tool-using agent (agentic RAG)** — no mode toggle. The model decides what to do per message:
-- **`search_documents`** — semantic search over the knowledge base (the "About Me" pack); the system prompt makes it ground every answer about the subject in retrieved content rather than guessing.
-- **`web_search`** — public web search (Tavily if `TAVILY_API_KEY` is set, else a keyless DuckDuckGo fallback).
-- **`calculator`** — safe arithmetic.
-- **`ingest_url`** — fetch a web page and add it to the knowledge base.
+A single, seamless chat backed by a **tool-using agent (agentic RAG)** — no mode
+toggle. The model decides what to do per message and grounds every answer about Pyro
+in retrieved knowledge instead of guessing:
 
-Responses **stream** token-by-token; each tool call is shown in the UI. Conversations and the vector store **persist** across restarts. The knowledge pack in [`backend/knowledge/`](backend/knowledge/) is auto-seeded into the vector store on first startup. Only read-only / additive tools are included — see [SECURITY.md](SECURITY.md).
+| Tool | What it does |
+|------|--------------|
+| **`search_documents`** | Semantic search over the "About Me" knowledge pack — the system prompt forces the agent to ground every answer about Pyro in retrieved content. |
+| **`web_search`** | Public web search (Tavily if `TAVILY_API_KEY` is set, else a keyless DuckDuckGo fallback). |
+| **`calculator`** | Safe arithmetic (AST-evaluated — no `eval`). |
+| **`ingest_url`** | Fetch a web page and add it to the knowledge base. |
+
+Responses **stream** token-by-token over SSE, and each tool call is surfaced in the
+UI. Conversations and the vector store **persist** across restarts. The knowledge
+pack in [`backend/knowledge/`](backend/knowledge/) is **auto-seeded** into the vector
+store on first startup. Only read-only / additive tools are exposed — see
+[SECURITY.md](SECURITY.md).
 
 ## Architecture
 
@@ -36,7 +47,7 @@ FastAPI backend (:8017)
 | Layer | Choice |
 |-------|--------|
 | Backend | FastAPI + Uvicorn |
-| RAG | LangChain (`langchain-fireworks`, `langchain-chroma`, text splitters, community loaders) |
+| Agent / RAG | LangChain (`langchain-fireworks`, `langchain-chroma`, text splitters, community loaders) |
 | LLM | Fireworks — `accounts/fireworks/models/kimi-k2p6` (configurable) |
 | Embeddings | Fireworks — `nomic-ai/nomic-embed-text-v1.5` |
 | Vector store | Chroma (persisted to disk) |
@@ -44,15 +55,13 @@ FastAPI backend (:8017)
 | Frontend | React (Vite), SSE streaming client |
 | Packaging | Single Docker image (FastAPI serves the built React app) |
 
-## Prerequisites
-
-- Python 3.9+ and Node 18+ (this repo was built on Python 3.9 / Node 22).
-- A **Fireworks API key** in `.env` (`cp .env.example .env`, then fill in `FIREWORKS_API_KEY`).
-
 ## Quickstart — local dev (two terminals)
 
-**1. Backend** (auto-loads `../.env` for the key):
+Prereqs: Python 3.9+ and Node 18+, plus a **Fireworks API key**.
+
+**1. Backend** (auto-loads `.env` for the key):
 ```bash
+cp .env.example .env        # then fill in FIREWORKS_API_KEY
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
@@ -66,7 +75,9 @@ npm install
 npm run dev          # http://localhost:5173 (proxies /api -> :8017)
 ```
 
-Open **http://localhost:5173**, upload a document, and ask about it.
+Open **http://localhost:5173** and ask *"Who is Pyro?"* — the first boot seeds the
+knowledge pack via Fireworks embeddings, then answers should cite a
+`search_documents` tool call.
 
 ## Run with Docker (single container)
 
@@ -74,7 +85,7 @@ Open **http://localhost:5173**, upload a document, and ask about it.
 # from this folder, with .env present (containing FIREWORKS_API_KEY)
 docker compose up --build
 ```
-Open **http://localhost:8017**. Chroma + SQLite + uploads persist in the `ragdata` volume.
+Open **http://localhost:8017**. Chroma + SQLite persist in the `ragdata` volume.
 
 ## Configuration
 
@@ -89,26 +100,45 @@ All optional except the key. Set in `.env` (see [.env.example](.env.example)):
 | `TOP_K` | `4` | Chunks retrieved per question. |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | `1000` / `150` | Splitter settings. |
 | `MAX_HISTORY` | `10` | Prior messages fed back into the prompt. |
-| `DATA_DIR` | `backend/data` | Where Chroma + SQLite + uploads live (Docker sets `/data`). |
+| `TAVILY_API_KEY` | — | Optional. Enables reliable `web_search`. |
+| `DATA_DIR` | `backend/data` | Where Chroma + SQLite live (Docker sets `/data`). |
+
+## The knowledge base
+
+The bot's facts about Pyro live in [`backend/knowledge/`](backend/knowledge/) as
+plain Markdown (`about`, `experience`, `projects`, `skills`, `honors`, `faq`),
+curated from my CV. Editing those files and restarting re-seeds the vector store —
+that's how I keep the bot accurate. Personal source docs (CV, etc.) are gitignored
+and never committed.
+
+## Security
+
+Public-facing hardening is part of the demo: path-traversal-safe uploads, rate
+limiting, security headers, scoped CORS, a prompt-injection guard, an SSRF guard on
+`ingest_url`, and a no-`eval` calculator. Details in [SECURITY.md](SECURITY.md).
 
 ## Project structure
 
 ```
-learning-langchain/
+pyro-chat-bot/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py            FastAPI app + static serving
+│   │   ├── main.py            FastAPI app + static serving + knowledge seeding
+│   │   ├── agent.py           tool-using agent loop (streaming)
+│   │   ├── tools.py           search_documents · web_search · calculator · ingest_url
+│   │   ├── rag.py             ingest + retrieve + Chroma vector store
 │   │   ├── config.py          settings (.env)
 │   │   ├── db.py              SQLite (conversations, messages, documents)
-│   │   ├── rag.py            LangChain: ingest + retrieve + stream
+│   │   ├── security.py        rate limit · headers · filename/path guards
 │   │   ├── schemas.py
 │   │   └── routers/           chat · documents · conversations
+│   ├── knowledge/             the "About Me" pack (auto-seeded)
 │   ├── tests/test_smoke.py
 │   └── requirements.txt
 ├── frontend/                  Vite + React (SSE chat client)
 ├── Dockerfile · docker-compose.yml
-├── list_models.py             provider model-discovery tool
-└── DEFINITION_OF_DONE.md
+├── list_models.py             provider model-discovery helper
+├── DEFINITION_OF_DONE.md · SECURITY.md · NEXT_STEPS.md
 ```
 
 ## Tests
@@ -117,23 +147,19 @@ learning-langchain/
 cd backend && pytest          # smoke tests (no network/key needed)
 ```
 
-## Helper script
+## Roadmap
 
-[`list_models.py`](list_models.py) lists models available for LangChain per provider (Fireworks, Anthropic, OpenAI, Google, Ollama). Auto-loads `.env`:
-```bash
-python3 list_models.py --provider fireworks
-```
+This bot is being shaped into a public, embeddable widget for my site. The full plan
+— public-shaping (ephemeral sessions, cost cap), the floating widget, and VPS deploy
+— lives in [NEXT_STEPS.md](NEXT_STEPS.md).
 
-## Learning goals & related notes
+## About Pyro
 
-This build exercises the core LangChain RAG path: chat models, prompts, document
-loaders, chunking, embeddings, vector stores, retrieval, and streaming generation.
-Connects to my notes on [RAG](../../topics/rag.md), [Chunking](../../topics/chunking.md),
-[Embeddings](../../topics/embeddings.md), [Vector DBs](../../topics/vector-dbs.md),
-[Retrieval Process](../../topics/retrieval-process.md), and [Generation](../../topics/generation.md).
+Full-stack game & systems engineer based in Ha Noi, Vietnam (~5 years) — real-time
+multiplayer, blockchain/Web3 gaming, and Telegram Mini Apps.
+[Website](https://pyrotheum1702.com) · [GitHub](https://github.com/Pyrotheum1702) ·
+[X](https://x.com/pyro1702)
 
-**Possible next steps:** conversation memory tuning, reranking, LangGraph agent, LangSmith tracing.
+## License
 
-## Notes / sources
-
--
+Code under [MIT](LICENSE).
