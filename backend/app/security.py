@@ -56,15 +56,26 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         h = response.headers
         h.setdefault("X-Content-Type-Options", "nosniff")
-        h.setdefault("X-Frame-Options", "DENY")
         h.setdefault("Referrer-Policy", "no-referrer")
         h.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+
+        # Framing policy. By default the app refuses to be embedded anywhere.
+        # If EMBED_ORIGINS is set (e.g. the portfolio site), allow exactly those
+        # origins to iframe it and drop X-Frame-Options (it has no allow-list form,
+        # so CSP frame-ancestors is the modern, per-origin control).
+        embed = get_settings().embed_origins
+        if embed:
+            frame_ancestors = "frame-ancestors 'self' " + " ".join(embed)
+        else:
+            h.setdefault("X-Frame-Options", "DENY")
+            frame_ancestors = "frame-ancestors 'none'"
+
         # The SPA is served same-origin; styles are injected inline by the bundler.
         h.setdefault(
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data:; "
             "style-src 'self' 'unsafe-inline'; connect-src 'self'; "
-            "object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+            "object-src 'none'; base-uri 'self'; " + frame_ancestors,
         )
         return response
 

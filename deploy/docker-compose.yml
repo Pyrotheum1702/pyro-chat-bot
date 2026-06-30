@@ -1,0 +1,35 @@
+# Production stack: PyroBot behind Caddy (auto-HTTPS) on a VPS.
+#   cd deploy && docker compose up -d --build
+# The app is NOT published to the host — only Caddy is. Caddy terminates TLS and
+# reverse-proxies to the app over the internal Docker network.
+services:
+  app:
+    build: ..                      # build context = project root (Dockerfile there)
+    env_file:
+      - ../.env                    # FIREWORKS_API_KEY, EMBED_ORIGINS, etc.
+    environment:
+      - DATA_DIR=/data             # Chroma + SQLite persist in the volume below
+      - PORT=8017
+    volumes:
+      - ragdata:/data
+    expose:
+      - "8017"                     # internal only (no host port)
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data           # persists issued certificates
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  ragdata:
+  caddy_data:
+  caddy_config:

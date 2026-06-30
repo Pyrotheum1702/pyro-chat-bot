@@ -30,9 +30,10 @@ a paid LLM.
 **Rate limiting** ([`security.py`](backend/app/security.py))
 - In-memory, per-client-IP fixed window on `/api/chat` and `/api/documents` (`RATE_LIMIT_PER_MINUTE`, default 30). Disable with `RATE_LIMIT_ENABLED=false`.
 
-**Transport / headers** ([`main.py`](backend/app/main.py))
-- Security headers on every response: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, a restrictive `Content-Security-Policy` (`frame-ancestors 'none'`, `object-src 'none'`), `Referrer-Policy`, `Permissions-Policy`.
-- **CORS** scoped to the known frontend origin(s) and only the methods/headers used — not a wildcard.
+**Transport / headers** ([`main.py`](backend/app/main.py), [`security.py`](backend/app/security.py))
+- Security headers on every response: `X-Content-Type-Options: nosniff`, a restrictive `Content-Security-Policy` (`object-src 'none'`, `base-uri 'self'`), `Referrer-Policy`, `Permissions-Policy`.
+- **Framing is denied by default** (`X-Frame-Options: DENY` + CSP `frame-ancestors 'none'`). To embed the app on a trusted site, set `EMBED_ORIGINS` to that origin — the backend then emits `frame-ancestors 'self' <origins>` and drops `X-Frame-Options`. Only list origins you control; this is the clickjacking boundary.
+- **CORS** scoped to the known frontend origin(s) via `CORS_ORIGINS` and only the methods/headers used — not a wildcard. (Not needed for the iframe embed, which is same-origin.)
 
 **Data layer** ([`db.py`](backend/app/db.py))
 - All SQL uses **parameterized queries** — no string interpolation.

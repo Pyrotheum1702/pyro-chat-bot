@@ -205,18 +205,23 @@ with httpx.stream("POST", "https://chat.pyrotheum1702.com/api/chat",
 
 ## 3. Embedding on your website
 
-### Today: iframe (after two changes)
-The backend currently sends headers that **block framing** —
-`X-Frame-Options: DENY` and CSP `frame-ancestors 'none'`. To embed the served SPA in
-a page on `pyrotheum1702.com` you must:
+### iframe (the supported embed path)
+By default the backend **blocks framing** (`X-Frame-Options: DENY` + CSP
+`frame-ancestors 'none'`). To let your site embed it, set **`EMBED_ORIGINS`** to the
+**parent page's** origin(s) — no code change:
 
-1. **Allow the framing origin.** In
-   [`backend/app/security.py`](backend/app/security.py) → `SecurityHeadersMiddleware`,
-   change the CSP to `frame-ancestors https://pyrotheum1702.com` and **drop**
-   `X-Frame-Options: DENY` (it has no allow-list equivalent).
-2. **Add your site to `CORS_ORIGINS`** (see [CORS](#cors)).
+```bash
+EMBED_ORIGINS=["https://pyrotheum1702.com","https://www.pyrotheum1702.com"]
+```
 
-Then:
+When set, the backend emits `frame-ancestors 'self' <your origins>` and drops
+`X-Frame-Options` (which has no per-origin allow-list). Leave it unset to stay locked.
+
+**No CORS change needed** for this path: the iframe loads the SPA from the backend's
+own origin (`chat.pyrotheum1702.com`), so its `/api` calls are **same-origin**. CORS
+only matters if a page calls the API *directly* (cross-origin) — see [CORS](#cors).
+
+Then drop this onto your site (e.g. in the Next.js layout):
 ```html
 <iframe
   src="https://chat.pyrotheum1702.com"
@@ -226,6 +231,7 @@ Then:
   allow="clipboard-write">
 </iframe>
 ```
+Full server setup is in [DEPLOY.md](DEPLOY.md).
 
 ### Planned: one-line floating widget
 A self-contained bubble + panel injected by a small script — no iframe, no CORS dance

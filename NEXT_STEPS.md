@@ -35,11 +35,16 @@ ask "who is Pyro?", confirm a grounded answer + a `search_documents` tool call.
 - **Ephemeral per-visitor sessions** (drop the shared conversation sidebar)
 - **Cost guardrail**: hard daily request/token cap (kill-switch so a viral day can't drain Fireworks)
 
-### 4. Embeddable widget
-Floating chat bubble + one-line `<script>`/iframe snippet for pyrotheum1702.com.
+### 4. Embed on the website  — DECIDED: iframe
+Floating `<iframe>` on pyrotheum1702.com (decided over a JS widget for speed — reuses
+the existing SPA). Backend support is **done**: `EMBED_ORIGINS` env var drives the CSP
+`frame-ancestors` allow-list. Snippet + setup in `DEPLOY.md`. Optional polish: a host-page
+"Chat with Pyro" button that toggles the iframe instead of always showing it.
 
-### 5. Deploy to the VPS
-Docker + Caddy (auto-HTTPS) reverse proxy; lock CORS / embedding origin to the domain; deploy runbook.
+### 5. Deploy to the VPS  — runbook ready
+Docker + Caddy (auto-HTTPS) stack in `deploy/` + `DEPLOY.md`. Remaining: point DNS
+(`chat.pyrotheum1702.com` → VPS), set `.env` (`FIREWORKS_API_KEY`, `EMBED_ORIGINS`),
+`docker compose up -d --build`. Do the public-shaping (#3) before opening it to traffic.
 
 ## Quick wins (anytime)
 - Set **`TAVILY_API_KEY`** so `web_search` actually returns results (DuckDuckGo fallback can't

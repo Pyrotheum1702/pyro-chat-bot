@@ -1,0 +1,9 @@
+# PyroBot reverse proxy. Caddy fetches & renews TLS automatically (Let's Encrypt).
+# Change the hostname to your subdomain; it must have a DNS A/AAAA record -> this VPS.
+chat.pyrotheum1702.com {
+	encode zstd gzip
+	# Disable proxy buffering so SSE (token streaming) flushes in real time.
+	reverse_proxy app:8017 {
+		flush_interval -1
+	}
+}

@@ -50,6 +50,10 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
+    # Origins allowed to embed the app in an <iframe> (CSP frame-ancestors).
+    # Empty = framing is blocked entirely (the safe default). Set to your site,
+    # e.g. ["https://pyrotheum1702.com","https://www.pyrotheum1702.com"].
+    embed_origins: List[str] = []
 
     @property
     def chroma_dir(self) -> Path:

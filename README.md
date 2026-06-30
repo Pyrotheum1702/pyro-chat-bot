@@ -90,6 +90,12 @@ docker compose up --build
 ```
 Open **http://localhost:8017**. Chroma + SQLite persist in the `ragdata` volume.
 
+## Deploy & embed on a website
+
+To run it on a VPS behind HTTPS and embed it as a floating iframe on your site, see
+**[DEPLOY.md](DEPLOY.md)** — Docker + Caddy (auto-TLS) stack in [`deploy/`](deploy/),
+plus the `EMBED_ORIGINS` setting and the iframe snippet.
+
 ## Configuration
 
 All optional except the key. Set in `.env` (see [.env.example](.env.example)):
@@ -104,6 +110,8 @@ All optional except the key. Set in `.env` (see [.env.example](.env.example)):
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | `1000` / `150` | Splitter settings. |
 | `MAX_HISTORY` | `10` | Prior messages fed back into the prompt. |
 | `TAVILY_API_KEY` | — | Optional. Enables reliable `web_search`. |
+| `CORS_ORIGINS` | `localhost:5173` | JSON list of origins allowed to call the API cross-origin. |
+| `EMBED_ORIGINS` | `[]` | JSON list of origins allowed to `<iframe>` the app (e.g. your site). Empty = framing blocked. |
 | `DATA_DIR` | `backend/data` | Where Chroma + SQLite live (Docker sets `/data`). |
 
 ## The knowledge base
@@ -167,6 +175,7 @@ pyro-chat-bot/
 ├── Dockerfile · docker-compose.yml
 ├── list_models.py             provider model-discovery helper
 ├── INTEGRATION.md             API reference + how to embed PyroBot
+├── DEPLOY.md · deploy/        VPS deploy (Docker + Caddy) + website embed
 ├── DEFINITION_OF_DONE.md · SECURITY.md · NEXT_STEPS.md
 ```
 
