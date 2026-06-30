@@ -66,11 +66,28 @@ def retrieve(question: str):
     return get_vectorstore().similarity_search(question, k=s.top_k)
 
 
+def reset_knowledge_store() -> None:
+    """Drop every vector in the collection so a re-seed starts from empty.
+
+    Without this, re-ingesting the knowledge pack would *append* — leaving two
+    copies of every chunk after each re-seed. We clear, then the next
+    get_vectorstore() call recreates an empty `docs` collection.
+    """
+    try:
+        get_vectorstore().delete_collection()
+    except Exception:
+        logger.exception("failed to reset the vector store")
+    finally:
+        get_vectorstore.cache_clear()
+
+
 def seed_knowledge() -> int:
     """Ingest the knowledge pack (knowledge/) once, on first startup.
 
     A sentinel file prevents re-embedding on every boot. To re-seed after editing
-    the knowledge files, delete `<data_dir>/.seeded` (or the whole data dir).
+    the knowledge files, delete `<data_dir>/.seeded` and restart. Re-seeding is
+    idempotent: it drops the existing vectors + document records first, so running
+    it repeatedly never duplicates content.
     Returns the number of chunks seeded (0 if already seeded or nothing to do).
     """
     from . import db
@@ -79,6 +96,10 @@ def seed_knowledge() -> int:
     sentinel = s.data_dir / ".seeded"
     if sentinel.exists() or not s.knowledge_dir.exists():
         return 0
+
+    # Clean slate so a re-seed (sentinel deleted) rebuilds rather than appends.
+    reset_knowledge_store()
+    db.clear_documents()
 
     total = 0
     for path in sorted(s.knowledge_dir.glob("*")):

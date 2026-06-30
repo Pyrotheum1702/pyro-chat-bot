@@ -113,3 +113,9 @@ def list_documents() -> List[Dict]:
     with _conn() as c:
         rows = c.execute("SELECT * FROM documents ORDER BY created_at DESC").fetchall()
         return [dict(r) for r in rows]
+
+
+def clear_documents() -> None:
+    """Drop every document record. Used by a re-seed, which rebuilds the list."""
+    with _conn() as c:
+        c.execute("DELETE FROM documents")

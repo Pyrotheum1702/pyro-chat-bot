@@ -148,8 +148,9 @@ regenerated per environment. This matters when you clone elsewhere (e.g. the VPS
 - **The vector store is reproducible.** On first boot, `seed_knowledge()` ingests
   `knowledge/*.md` into a fresh Chroma store and writes a `.seeded` sentinel so it only
   happens once (a small one-time Fireworks embedding cost per environment).
-- **To update what the bot knows:** edit `knowledge/*.md`, delete `backend/data/.seeded`
-  (or the whole `data/` dir), and restart to re-seed. Editing the CV alone does nothing.
+- **To update what the bot knows:** edit `knowledge/*.md`, delete `backend/data/.seeded`,
+  and restart to re-seed. Re-seeding is idempotent — it rebuilds the vector store from
+  scratch, so repeating it never duplicates content. Editing the CV alone does nothing.
 - **`backend/data/` is not backed up by git.** To preserve real conversation history or a
   curated vector store, back up that directory (or the Docker `ragdata` volume) separately.
 

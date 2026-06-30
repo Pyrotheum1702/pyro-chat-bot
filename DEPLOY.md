@@ -135,7 +135,9 @@ docker compose logs -f app
 docker compose restart app
 docker compose down            # stop (keeps volumes/data)
 
-# refresh what the bot knows: edit backend/knowledge/*.md, then re-seed
+# refresh what the bot knows: edit backend/knowledge/*.md, then re-seed.
+# Re-seeding is idempotent — it rebuilds the vector store from scratch, so
+# repeating it never duplicates content.
 docker compose exec app rm -f /data/.seeded && docker compose restart app
 ```
 
