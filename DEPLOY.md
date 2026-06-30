@@ -39,13 +39,22 @@ cp .env.example .env
 Edit `.env` and set at least:
 ```bash
 FIREWORKS_API_KEY=fw_xxxxxxxx
+# Native embed (site calls /api/chat cross-origin) → allow the site's origins:
+CORS_ORIGINS=["https://pyrotheum1702.com","https://www.pyrotheum1702.com"]
+# Only needed if you instead embed via <iframe>:
 EMBED_ORIGINS=["https://pyrotheum1702.com","https://www.pyrotheum1702.com"]
 # optional but recommended for public exposure:
 TAVILY_API_KEY=tvly_xxxxxxxx      # reliable web_search
 RATE_LIMIT_PER_MINUTE=30          # tighten/loosen per expected traffic
+DAILY_COST_CAP_USD=1.0            # raise to your budget (a global cap → 429s everyone once hit)
 ```
-`EMBED_ORIGINS` is what allows your website to iframe the bot — list the **parent
-page** origins (your site), not the bot's own subdomain.
+Pick the embed that matches your site:
+- **Native** (site renders the chat UI, calls the API directly) → set **`CORS_ORIGINS`**.
+- **iframe** (site frames the bot's own page) → set **`EMBED_ORIGINS`**; CORS isn't needed.
+
+Leave `EXPOSE_CONVERSATIONS` and `ALLOW_PUBLIC_UPLOAD` unset (off) for a public site.
+`TRUST_PROXY_HEADERS=true` is already set in `deploy/docker-compose.yml` (you're behind
+Caddy), so per-IP rate limiting uses the real client IP.
 
 ## 4. Set your hostname
 Edit [`deploy/Caddyfile`](deploy/Caddyfile) and replace `chat.pyrotheum1702.com` with

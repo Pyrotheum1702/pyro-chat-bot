@@ -10,6 +10,7 @@ services:
     environment:
       - DATA_DIR=/data             # Chroma + SQLite persist in the volume below
       - PORT=8017
+      - TRUST_PROXY_HEADERS=true   # behind Caddy → use X-Forwarded-For for per-IP limits
     volumes:
       - ragdata:/data
     expose:

@@ -33,6 +33,10 @@ a paid LLM.
 **Rate limiting** ([`security.py`](backend/app/security.py))
 - In-memory, per-client-IP fixed window on `/api/chat` and `/api/documents` (`RATE_LIMIT_PER_MINUTE`, default 30). Disable with `RATE_LIMIT_ENABLED=false`.
 
+**Cross-visitor isolation** ([`main.py`](backend/app/main.py))
+- **Conversation list/detail off by default** (`EXPOSE_CONVERSATIONS=false`): `GET /api/conversations` and `/api/conversations/{id}` are not mounted, so visitors can't list or enumerate other visitors' chats. Per-session continuity still works via the `conversation_id` returned by `/api/chat`. Unmatched `/api/*` paths return a real `404` (the SPA catch-all never serves API routes).
+- **Real client IP behind a proxy** (`TRUST_PROXY_HEADERS`): when set, the per-IP rate limiter reads `X-Forwarded-For`/`X-Real-IP` so limits are per-visitor, not bucketed under the proxy. Off by default so a direct client can't spoof its IP.
+
 **Cost guardrail** ([`cost.py`](backend/app/cost.py))
 - Hard **daily spend cap** on chat (`DAILY_COST_CAP_USD`, default **$1.00/UTC day**). Each turn's cost is estimated from token counts and accumulated; once the cap is hit, `/api/chat` returns `429` until the next day. A kill-switch so a traffic spike or abuse can't run up the Fireworks bill. In-memory/per-process (use a shared store behind multiple workers). `GET /api/health` reports `spent_today_usd`.
 

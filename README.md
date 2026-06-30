@@ -114,6 +114,8 @@ All optional except the key. Set in `.env` (see [.env.example](.env.example)):
 | `USD_PER_MILLION_INPUT_TOKENS` / `…OUTPUT…` | `0.9` / `0.9` | Price estimate used to meter the cap — tune to your model. |
 | `RATE_LIMIT_PER_MINUTE` | `30` | Requests/min per IP on chat + upload. |
 | `ALLOW_PUBLIC_UPLOAD` | `false` | When off, the KB is read-only to visitors: `POST /api/documents` → 403 and `ingest_url` is withheld. |
+| `EXPOSE_CONVERSATIONS` | `false` | When off, conversation list/detail endpoints are not mounted (avoids cross-visitor leak). |
+| `TRUST_PROXY_HEADERS` | `false` | Behind a trusted proxy, use `X-Forwarded-For` for per-IP rate limiting. |
 | `CORS_ORIGINS` | `localhost:5173` | JSON list of origins allowed to call the API cross-origin. |
 | `EMBED_ORIGINS` | `[]` | JSON list of origins allowed to `<iframe>` the app (e.g. your site). Empty = framing blocked. |
 | `DATA_DIR` | `backend/data` | Where Chroma + SQLite live (Docker sets `/data`). |

@@ -114,6 +114,15 @@ def _get_limiter() -> _RateLimiter:
 
 
 def _client_ip(request: Request) -> str:
+    # Behind a trusted reverse proxy, the socket peer is the proxy — use the
+    # forwarded client IP so per-IP rate limiting is per-visitor, not global.
+    if get_settings().trust_proxy_headers:
+        fwd = request.headers.get("x-forwarded-for")
+        if fwd:
+            return fwd.split(",")[0].strip()  # left-most = original client
+        real = request.headers.get("x-real-ip")
+        if real:
+            return real.strip()
     return request.client.host if request.client else "unknown"
 
 

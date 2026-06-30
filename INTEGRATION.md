@@ -36,7 +36,11 @@ your site's origin, add it via the `CORS_ORIGINS` env var:
 CORS_ORIGINS=["https://pyrotheum1702.com","https://www.pyrotheum1702.com"]
 ```
 
-Allowed methods: `GET, POST, OPTIONS`. Allowed request header: `Content-Type`.
+Allowed methods: `GET, POST, OPTIONS`. Allowed request header: `Content-Type`. This is
+required for the **native** embed (a host page calling `/api/chat` cross-origin); the
+iframe embed is same-origin and doesn't need it. Behind a reverse proxy, set
+`TRUST_PROXY_HEADERS=true` so per-IP rate limiting uses the real client IP from
+`X-Forwarded-For` rather than bucketing everyone under the proxy.
 
 ### Rate limits & input caps
 | Limit | Default | Applies to | On exceed |
@@ -123,8 +127,10 @@ as optional UI affordances ("🔍 searching documents…").
 | `POST /api/conversations` | `{"title": "..."}` (optional) | the created conversation |
 | `GET /api/conversations/{id}` | — | `{conversation, messages: [{id, role, content, created_at}]}` |
 
-Not rate-limited. For a public, multi-visitor deployment you'll likely make sessions
-**ephemeral** and drop the shared list (see [roadmap](NEXT_STEPS.md)).
+**Disabled by default** (`404`). On a public multi-visitor site the list is global and
+ids are enumerable, so exposing it leaks other visitors' chats. Chat continuity does
+**not** need these endpoints — `/api/chat` returns a `conversation_id` you pass back on
+each turn. Set `EXPOSE_CONVERSATIONS=true` only for a private/dev instance.
 
 ### Documents (knowledge base)
 

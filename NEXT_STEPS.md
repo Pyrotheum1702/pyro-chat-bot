@@ -36,13 +36,19 @@ ask "who is Pyro?", confirm a grounded answer + a `search_documents` tool call.
 - ✅ **Read-only KB to visitors** — DONE: `ALLOW_PUBLIC_UPLOAD=false` by default disables
   `POST /api/documents` (403) and withholds `ingest_url`; upload UI removed from the SPA.
   Private path: edit `backend/knowledge/*.md` + re-seed.
-- **Ephemeral per-visitor sessions** (drop the shared conversation sidebar) — still TODO
+- ✅ **No cross-visitor leak** — DONE: `EXPOSE_CONVERSATIONS=false` (default) unmounts the
+  conversation list/detail endpoints; chat continuity uses the `conversation_id` from
+  `/api/chat`. Unmatched `/api/*` now 404s (SPA catch-all no longer serves API routes).
+  `TRUST_PROXY_HEADERS` added for correct per-IP limiting behind Caddy.
+- Optional further step: fully **ephemeral sessions** (don't persist visitor chats at all).
 
-### 4. Embed on the website  — DECIDED: iframe
-Floating `<iframe>` on pyrotheum1702.com (decided over a JS widget for speed — reuses
-the existing SPA). Backend support is **done**: `EMBED_ORIGINS` env var drives the CSP
-`frame-ancestors` allow-list. Snippet + setup in `DEPLOY.md`. Optional polish: a host-page
-"Chat with Pyro" button that toggles the iframe instead of always showing it.
+### 4. Embed on the website  — site shipped NATIVE
+The site (pyrotheum1702.com) integrated in **native** mode: it renders its own chat UI
+and calls `POST /api/chat` cross-origin (so `CORS_ORIGINS` must include the site).
+Backend supports both this and the iframe path (`EMBED_ORIGINS` → CSP frame-ancestors).
+**Bumped priority — ship a drop-in `widget.js`** (per site-maintainer feedback): a
+one-line `<script>` so future embeds don't re-implement the POST+ReadableStream SSE
+parser. Reference client exists on the site side (`lib/pyrobot.ts` streamChat()).
 
 ### 5. Deploy to the VPS  — runbook ready
 Docker + Caddy (auto-HTTPS) stack in `deploy/` + `DEPLOY.md`. Remaining: point DNS

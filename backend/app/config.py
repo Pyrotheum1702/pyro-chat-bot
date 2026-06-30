@@ -40,6 +40,16 @@ class Settings(BaseSettings):
     allow_public_upload: bool = False
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 30    # per client IP, on chat + upload
+    # When False (default) the conversation list/detail endpoints are NOT exposed —
+    # on a public multi-visitor site they'd leak other visitors' chats (the list is
+    # global and ids are enumerable). Per-session continuity still works via the
+    # conversation_id returned by /api/chat. Enable only for a private/dev instance.
+    expose_conversations: bool = False
+    # Honor X-Forwarded-For / X-Real-IP for the client IP. Set True ONLY when behind
+    # a trusted reverse proxy (e.g. the bundled Caddy) — otherwise per-IP rate
+    # limiting buckets every visitor under the proxy's IP. Off by default so a
+    # direct client can't spoof its IP to dodge limits.
+    trust_proxy_headers: bool = False
 
     # --- cost guardrail (hard daily kill-switch on estimated LLM spend) ---
     daily_cost_cap_usd: float = 1.0            # per UTC day; <= 0 disables the cap

@@ -9,7 +9,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
 
@@ -72,7 +72,11 @@ app.include_router(
     dependencies=[Depends(security.rate_limit), Depends(cost.cost_guard)],
 )
 app.include_router(documents.router, prefix="/api", dependencies=[Depends(security.rate_limit)])
-app.include_router(conversations.router, prefix="/api")
+
+# Conversation list/detail is OFF by default: on a public site it would leak other
+# visitors' chats. Chat itself still persists + continues via conversation_id.
+if settings.expose_conversations:
+    app.include_router(conversations.router, prefix="/api")
 
 
 # In production (single container) the built React app lives in frontend/dist.
@@ -80,6 +84,10 @@ if settings.frontend_dist.exists():
 
     @app.get("/{full_path:path}")
     async def spa(full_path: str):
+        # Never serve the SPA for API paths — an unmatched /api/* is a real 404,
+        # not a single-page-app route.
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
         candidate = settings.frontend_dist / full_path
         if full_path and candidate.is_file():
             return FileResponse(candidate)

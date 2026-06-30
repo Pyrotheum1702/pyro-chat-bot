@@ -15,17 +15,22 @@ def test_health():
     assert r.json()["status"] == "ok"
 
 
-def test_conversation_crud():
-    r = client.post("/api/conversations", json={"title": "smoke test"})
-    assert r.status_code == 200
-    cid = r.json()["id"]
+def test_conversation_db_crud():
+    # DB layer works (chat persistence relies on it) independent of the HTTP surface.
+    from app import db
 
-    listed = client.get("/api/conversations").json()
-    assert any(c["id"] == cid for c in listed)
+    cid = db.create_conversation("smoke test")
+    assert any(c["id"] == cid for c in db.list_conversations())
+    db.add_message(cid, "user", "hi")
+    assert db.get_messages(cid)[0]["content"] == "hi"
 
-    detail = client.get(f"/api/conversations/{cid}")
-    assert detail.status_code == 200
-    assert detail.json()["conversation"]["id"] == cid
+
+def test_conversations_endpoint_gated_by_default():
+    # Public-safe default: list/detail are NOT exposed (no cross-visitor leak).
+    from app.config import get_settings
+
+    expected = 200 if get_settings().expose_conversations else 404
+    assert client.get("/api/conversations").status_code == expected
 
 
 def test_rag_module_imports():
