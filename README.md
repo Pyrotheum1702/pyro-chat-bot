@@ -42,6 +42,9 @@ FastAPI backend (:8017)
   └─ SQLite   (conversations + messages)
 ```
 
+> **Integrating PyroBot into a site or app?** See **[INTEGRATION.md](INTEGRATION.md)** —
+> the HTTP/SSE API reference, client examples, and how to embed it.
+
 ## Stack
 
 | Layer | Choice |
@@ -138,6 +141,7 @@ pyro-chat-bot/
 ├── frontend/                  Vite + React (SSE chat client)
 ├── Dockerfile · docker-compose.yml
 ├── list_models.py             provider model-discovery helper
+├── INTEGRATION.md             API reference + how to embed PyroBot
 ├── DEFINITION_OF_DONE.md · SECURITY.md · NEXT_STEPS.md
 ```
 
