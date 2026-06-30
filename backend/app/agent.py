@@ -43,15 +43,15 @@ def _get_agent_llm():
 
     s = get_settings()
     model = s.agent_model or s.chat_model
-    return ChatFireworks(model=model, temperature=s.temperature).bind_tools(toolmod.ALL_TOOLS)
+    return ChatFireworks(model=model, temperature=s.temperature).bind_tools(toolmod.active_tools())
 
 
 async def _run_tool(name: str, args: dict) -> str:
     from . import tools as toolmod
 
-    tool = toolmod.TOOLS_BY_NAME.get(name)
+    tool = {t.name: t for t in toolmod.active_tools()}.get(name)
     if tool is None:
-        return f"Error: unknown tool '{name}'."
+        return f"Error: tool '{name}' is not available."
     try:
         # Tools are synchronous (network / disk) — run off the event loop.
         return await asyncio.to_thread(tool.invoke, args)

@@ -18,7 +18,10 @@ a paid LLM.
 
 ## Implemented controls
 
-**File upload** ([`routers/documents.py`](backend/app/routers/documents.py), [`security.py`](backend/app/security.py))
+**Knowledge-base writes** ([`routers/documents.py`](backend/app/routers/documents.py), [`tools.py`](backend/app/tools.py))
+- **Public upload is off by default** (`ALLOW_PUBLIC_UPLOAD=false`): `POST /api/documents` returns `403` and the agent's `ingest_url` tool is withheld, so anonymous visitors can't write to the shared knowledge base. Curate it privately via `backend/knowledge/*.md` + re-seed. The controls below apply when uploads are explicitly re-enabled.
+
+**File upload** ([`routers/documents.py`](backend/app/routers/documents.py), [`security.py`](backend/app/security.py)) — *when `ALLOW_PUBLIC_UPLOAD=true`*
 - **Filename sanitization** — `safe_filename()` reduces the upload name to a safe basename (strips `../`, absolute paths, odd characters), and `ensure_within()` re-checks the resolved path stays inside the upload directory.
 - **Extension allow-list** — only `.pdf` / `.txt` / `.md`.
 - **Size limit** — streamed to disk with a hard cap (`MAX_UPLOAD_MB`, default 20 MB); partial files are deleted on rejection.

@@ -21,7 +21,7 @@ in retrieved knowledge instead of guessing:
 | **`search_documents`** | Semantic search over the "About Me" knowledge pack — the system prompt forces the agent to ground every answer about Pyro in retrieved content. |
 | **`web_search`** | Public web search (Tavily if `TAVILY_API_KEY` is set, else a keyless DuckDuckGo fallback). |
 | **`calculator`** | Safe arithmetic (AST-evaluated — no `eval`). |
-| **`ingest_url`** | Fetch a web page and add it to the knowledge base. |
+| **`ingest_url`** | Fetch a web page and add it to the knowledge base. *(Withheld unless `ALLOW_PUBLIC_UPLOAD=true` — the KB is read-only to visitors by default.)* |
 
 Responses **stream** token-by-token over SSE, and each tool call is surfaced in the
 UI. Conversations and the vector store **persist** across restarts. The knowledge
@@ -113,6 +113,7 @@ All optional except the key. Set in `.env` (see [.env.example](.env.example)):
 | `DAILY_COST_CAP_USD` | `1.0` | Hard daily spend cap (USD, UTC day) on chat; `0` disables. Returns `429` once hit. |
 | `USD_PER_MILLION_INPUT_TOKENS` / `…OUTPUT…` | `0.9` / `0.9` | Price estimate used to meter the cap — tune to your model. |
 | `RATE_LIMIT_PER_MINUTE` | `30` | Requests/min per IP on chat + upload. |
+| `ALLOW_PUBLIC_UPLOAD` | `false` | When off, the KB is read-only to visitors: `POST /api/documents` → 403 and `ingest_url` is withheld. |
 | `CORS_ORIGINS` | `localhost:5173` | JSON list of origins allowed to call the API cross-origin. |
 | `EMBED_ORIGINS` | `[]` | JSON list of origins allowed to `<iframe>` the app (e.g. your site). Empty = framing blocked. |
 | `DATA_DIR` | `backend/data` | Where Chroma + SQLite live (Docker sets `/data`). |

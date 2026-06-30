@@ -5,11 +5,9 @@ import * as api from "./api.js";
 
 export default function App() {
   const [conversations, setConversations] = useState([]);
-  const [documents, setDocuments] = useState([]);
   const [convId, setConvId] = useState(null); // null => unsaved new chat
   const [messages, setMessages] = useState([]);
   const [streaming, setStreaming] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -19,18 +17,9 @@ export default function App() {
     }
   }, []);
 
-  const refreshDocuments = useCallback(async () => {
-    try {
-      setDocuments(await api.getDocuments());
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   useEffect(() => {
     refreshConversations();
-    refreshDocuments();
-  }, [refreshConversations, refreshDocuments]);
+  }, [refreshConversations]);
 
   async function selectConversation(id) {
     if (streaming) return;
@@ -43,18 +32,6 @@ export default function App() {
     if (streaming) return;
     setConvId(null);
     setMessages([]);
-  }
-
-  async function handleUpload(file) {
-    setUploading(true);
-    try {
-      await api.uploadDocument(file);
-      await refreshDocuments();
-    } catch (e) {
-      alert("Upload failed: " + e.message);
-    } finally {
-      setUploading(false);
-    }
   }
 
   async function handleSend(text) {
@@ -119,7 +96,6 @@ export default function App() {
         onDone: () => {
           setStreaming(false);
           refreshConversations();
-          refreshDocuments(); // agent may have ingested a URL
         },
       }
     );
@@ -132,9 +108,6 @@ export default function App() {
         activeId={convId}
         onSelect={selectConversation}
         onNew={newChat}
-        documents={documents}
-        onUpload={handleUpload}
-        uploading={uploading}
       />
       <Chat messages={messages} streaming={streaming} onSend={handleSend} />
     </div>

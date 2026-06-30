@@ -34,10 +34,21 @@ def test_rag_module_imports():
 
 
 def test_security_headers_present():
+    from app.config import get_settings
+
     r = client.get("/api/health")
     assert r.headers.get("X-Content-Type-Options") == "nosniff"
-    assert r.headers.get("X-Frame-Options") == "DENY"
-    assert "Content-Security-Policy" in r.headers
+    csp = r.headers.get("Content-Security-Policy", "")
+    assert "frame-ancestors" in csp
+
+    # Framing policy depends on config: locked by default, opened per-origin when
+    # EMBED_ORIGINS is set (then X-Frame-Options is dropped — it has no allow-list).
+    if get_settings().embed_origins:
+        assert r.headers.get("X-Frame-Options") is None
+        assert "frame-ancestors 'self'" in csp
+    else:
+        assert r.headers.get("X-Frame-Options") == "DENY"
+        assert "frame-ancestors 'none'" in csp
 
 
 def test_safe_filename_blocks_traversal():
@@ -70,6 +81,19 @@ def test_calculator_tool_is_safe():
 def test_agent_modules_import():
     import app.agent  # noqa: F401
     import app.tools  # noqa: F401
+
+
+def test_public_upload_disabled_by_default():
+    r = client.post("/api/documents", files={"file": ("x.txt", b"hello", "text/plain")})
+    assert r.status_code == 403
+
+
+def test_ingest_url_withheld_by_default():
+    from app import tools
+
+    names = {t.name for t in tools.active_tools()}
+    assert "ingest_url" not in names          # KB is read-only to visitors
+    assert "search_documents" in names        # read tools still available
 
 
 def test_health_reports_cost_cap():

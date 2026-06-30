@@ -113,6 +113,10 @@ price estimates) in `.env`; check `GET /api/health` for `spent_today_usd`. See
 [SECURITY.md](SECURITY.md).
 
 ## Before you go fully public (recommended)
-The cost cap above is in place. Still on the list per [NEXT_STEPS.md](NEXT_STEPS.md):
-make sessions **ephemeral** and **remove the visitor-facing upload** so anonymous users
-can't write to the knowledge base.
+The **cost cap** and a **read-only knowledge base** are already in place — public upload
+is off by default (`ALLOW_PUBLIC_UPLOAD=false`: `POST /api/documents` → 403, `ingest_url`
+withheld), so visitors can't write to the KB or run up the bill. Update the KB privately
+by editing `backend/knowledge/*.md` and re-seeding (see step 7).
+
+Still on the list per [NEXT_STEPS.md](NEXT_STEPS.md): make per-visitor sessions
+**ephemeral** (drop the shared conversation sidebar) before high-traffic exposure.

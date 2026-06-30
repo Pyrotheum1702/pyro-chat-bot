@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # --- security / limits ---
     max_upload_mb: int = 20            # reject uploads larger than this
     max_message_chars: int = 8000      # reject chat messages longer than this
+    # When False (default) the knowledge base is READ-ONLY to visitors: the
+    # /api/documents upload endpoint is disabled and the `ingest_url` tool is
+    # withheld. Curate the KB privately via backend/knowledge/*.md + re-seed.
+    allow_public_upload: bool = False
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 30    # per client IP, on chat + upload
 

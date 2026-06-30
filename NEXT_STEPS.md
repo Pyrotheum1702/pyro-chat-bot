@@ -33,8 +33,10 @@ ask "who is Pyro?", confirm a grounded answer + a `search_documents` tool call.
 ### 3. Make it "public-shaped"
 - ✅ **Cost guardrail** — DONE: hard daily spend cap (`DAILY_COST_CAP_USD`, default $1/UTC
   day) in `cost.py`; chat returns 429 once hit. See SECURITY.md / DEPLOY.md.
-- Remove the visitor-facing **document upload** (keep a private path to update the KB)
-- **Ephemeral per-visitor sessions** (drop the shared conversation sidebar)
+- ✅ **Read-only KB to visitors** — DONE: `ALLOW_PUBLIC_UPLOAD=false` by default disables
+  `POST /api/documents` (403) and withholds `ingest_url`; upload UI removed from the SPA.
+  Private path: edit `backend/knowledge/*.md` + re-seed.
+- **Ephemeral per-visitor sessions** (drop the shared conversation sidebar) — still TODO
 
 ### 4. Embed on the website  — DECIDED: iframe
 Floating `<iframe>` on pyrotheum1702.com (decided over a JS widget for speed — reuses

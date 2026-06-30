@@ -213,3 +213,16 @@ def ingest_url(url: str) -> str:
 
 ALL_TOOLS = [search_documents, calculator, web_search, ingest_url]
 TOOLS_BY_NAME = {t.name: t for t in ALL_TOOLS}
+
+
+def active_tools():
+    """Tools the agent may use, given config.
+
+    When public upload is off (the default), the knowledge base is read-only to
+    visitors, so `ingest_url` (which writes to it) is withheld.
+    """
+    from .config import get_settings
+
+    if get_settings().allow_public_upload:
+        return ALL_TOOLS
+    return [t for t in ALL_TOOLS if t.name != "ingest_url"]

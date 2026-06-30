@@ -133,9 +133,11 @@ Not rate-limited. For a public, multi-visitor deployment you'll likely make sess
 | `POST /api/documents` | `multipart/form-data`, field `file` | `{id, filename, chunks, created_at}` |
 | `GET /api/documents` | — | list of ingested documents |
 
-`POST` accepts `.pdf`, `.txt`, `.md`, ≤ 20 MB; the file is chunked, embedded, and
-added to the vector store. **Keep this off the public surface** — gate it behind auth
-or a private network path so visitors can't write to the knowledge base.
+**Upload is disabled by default** (`POST /api/documents` → `403`). The knowledge base is
+read-only to visitors; curate it privately by editing `backend/knowledge/*.md` and
+re-seeding. Set `ALLOW_PUBLIC_UPLOAD=true` to re-enable (then `POST` accepts `.pdf` /
+`.txt` / `.md`, ≤ 20 MB) — only do that behind auth or a private network. The same flag
+gates the agent's `ingest_url` tool, which also writes to the KB.
 
 ---
 
@@ -262,6 +264,7 @@ HTTP status is already `200` by then).
 | Status | When |
 |--------|------|
 | `400` | Empty message · unsupported upload type · unextractable file |
+| `403` | Upload attempted while `ALLOW_PUBLIC_UPLOAD` is off (the default) |
 | `404` | Unknown conversation id |
 | `413` | Message too long · upload too large |
 | `429` | Rate limit exceeded · or the daily cost cap is reached |

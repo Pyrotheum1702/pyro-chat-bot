@@ -19,6 +19,13 @@ ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
 async def upload_document(file: UploadFile = File(...)):
     settings = get_settings()
 
+    # 0. Public uploads are off by default — the KB is curated privately.
+    if not settings.allow_public_upload:
+        raise HTTPException(
+            status_code=403,
+            detail="Document upload is disabled.",
+        )
+
     # 1. Sanitize the filename (defends against path traversal).
     name = security.safe_filename(file.filename or "upload")
     ext = ("." + name.rsplit(".", 1)[-1].lower()) if "." in name else ""
