@@ -4,13 +4,21 @@ Deploy PyroBot to your VPS behind HTTPS, then embed it on
 [pyrotheum1702.com](https://pyrotheum1702.com) as a floating iframe.
 
 The deploy stack lives in [`deploy/`](deploy/): a production `docker-compose.yml`
-(app + Caddy) and a `Caddyfile`. Caddy terminates TLS (auto Let's Encrypt) and
-reverse-proxies to the app over the internal Docker network — the app itself is never
-published to the host.
+(app + Caddy), a `Caddyfile`, and an nginx vhost in
+[`deploy/nginx/`](deploy/nginx/). Pick **one** front door:
 
-```
-Browser ──HTTPS──▶ Caddy (:443, auto-TLS) ──http──▶ app:8017 (FastAPI + SPA)
-```
+- **Option A — bundled Caddy** (dedicated box, nothing else on :80/:443). Caddy
+  terminates TLS (auto Let's Encrypt) and proxies the app over the Docker network.
+  ```
+  Browser ──HTTPS──▶ Caddy (:443, auto-TLS) ──http──▶ app:8017 (FastAPI + SPA)
+  ```
+- **Option B — existing host nginx** (shared box where system nginx already owns
+  :80/:443). Don't run the Caddy service; the app publishes to `127.0.0.1:8017` and
+  nginx proxies to it, with certbot for TLS. **This is how `chat.pyrotheum1702.com`
+  is served.**
+  ```
+  Browser ──HTTPS──▶ host nginx (:443, certbot) ──http──▶ 127.0.0.1:8017 (FastAPI + SPA)
+  ```
 
 ## 0. Prerequisites
 - A VPS with **Docker + Docker Compose** and ports **80 + 443** open.
@@ -57,10 +65,15 @@ Leave `EXPOSE_CONVERSATIONS` and `ALLOW_PUBLIC_UPLOAD` unset (off) for a public 
 Caddy), so per-IP rate limiting uses the real client IP.
 
 ## 4. Set your hostname
-Edit [`deploy/Caddyfile`](deploy/Caddyfile) and replace `chat.pyrotheum1702.com` with
-your actual subdomain (must match the DNS record from step 1).
+Replace `chat.pyrotheum1702.com` with your actual subdomain (must match the DNS record
+from step 1) in **either**:
+- Option A: [`deploy/Caddyfile`](deploy/Caddyfile), or
+- Option B: [`deploy/nginx/chat.pyrotheum1702.conf`](deploy/nginx/chat.pyrotheum1702.conf)
+  (`server_name`).
 
 ## 5. Launch
+
+**Option A — bundled Caddy:**
 ```bash
 cd deploy
 docker compose up -d --build
@@ -70,6 +83,23 @@ call), and Caddy fetches a TLS cert. Watch it come up:
 ```bash
 docker compose logs -f          # look for the app "seeded N chunks" line + Caddy cert
 ```
+
+**Option B — existing host nginx:** start only the app (the loopback port publish in
+`deploy/docker-compose.yml` lets nginx reach it), then wire up nginx + certbot:
+```bash
+cd deploy
+docker compose up -d --build app          # app only — NOT the caddy service
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8017/api/health   # expect 200
+
+sudo cp nginx/chat.pyrotheum1702.conf /etc/nginx/conf.d/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d chat.pyrotheum1702.com    # adds the 443 block + cert
+```
+> Behind Cloudflare (proxied/orange-cloud), certbot's HTTP-01 challenge can fail — either
+> set the record to "DNS only" while issuing, or use Cloudflare **Full** mode with an
+> Origin Certificate. `TRUST_PROXY_HEADERS=true` is already set so per-IP limits use the
+> real client IP from `X-Forwarded-For`.
+
 Then open **https://chat.pyrotheum1702.com** and ask *"Who is Pyro?"* — you should get a
 grounded answer with a `search_documents` tool call.
 
@@ -96,7 +126,9 @@ is in `EMBED_ORIGINS` (step 3), which the backend turns into a CSP
 ## 7. Operations
 ```bash
 # update to the latest code
-git pull && cd deploy && docker compose up -d --build
+git pull && cd deploy && docker compose up -d --build          # Option A (Caddy)
+# Option B (host nginx): start only the app so Compose doesn't try to bind Caddy to :80
+git pull && cd deploy && docker compose up -d --build app
 
 # logs / restart / stop
 docker compose logs -f app

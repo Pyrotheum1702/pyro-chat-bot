@@ -14,7 +14,13 @@ services:
     volumes:
       - ragdata:/data
     expose:
-      - "8017"                     # internal only (no host port)
+      - "8017"                     # internal Docker network (used by the Caddy service below)
+    # Publish to loopback ONLY so an existing host reverse proxy (e.g. system nginx
+    # that already owns 80/443 on a shared box) can reach the app at 127.0.0.1:8017.
+    # Harmless for the Caddy path (Caddy reaches the app over the Docker network).
+    # NOT 0.0.0.0 — we don't want the app exposed directly to the public internet.
+    ports:
+      - "127.0.0.1:8017:8017"
     restart: unless-stopped
 
   caddy:
