@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.key
+
+# Personal source docs (CV/resume) — keep out of git
+*-CV.pdf
+**/knowledge/source/
+
+# Runtime data (Chroma vector store, SQLite, uploads)
+data/
+backend/data/
+
+# Node / frontend build
+node_modules/
+dist/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
