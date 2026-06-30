@@ -1,12 +1,15 @@
 """Application settings, loaded from environment / the project .env file."""
 from __future__ import annotations
 
+import json
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import Annotated, List
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # .../learning-langchain  (project root, two levels up from this file's app/ dir)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -65,14 +68,34 @@ class Settings(BaseSettings):
     data_dir: Path = PROJECT_ROOT / "backend" / "data"
     knowledge_dir: Path = PROJECT_ROOT / "backend" / "knowledge"
     frontend_dist: Path = PROJECT_ROOT / "frontend" / "dist"
-    cors_origins: List[str] = [
+    # NoDecode + the validator below: accept a JSON list OR a comma-separated
+    # string, and tolerate a trailing inline `# comment` (a common .env mistake).
+    cors_origins: Annotated[List[str], NoDecode] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
     # Origins allowed to embed the app in an <iframe> (CSP frame-ancestors).
     # Empty = framing is blocked entirely (the safe default). Set to your site,
     # e.g. ["https://pyrotheum1702.com","https://www.pyrotheum1702.com"].
-    embed_origins: List[str] = []
+    embed_origins: Annotated[List[str], NoDecode] = []
+
+    @field_validator("cors_origins", "embed_origins", mode="before")
+    @classmethod
+    def _parse_origin_list(cls, v):
+        """Lenient list parsing for env values.
+
+        Accepts a real list (the default), a JSON array, or a comma-separated
+        string — and strips a trailing ` # comment` so a copied `.env` line like
+        `CORS_ORIGINS=[...]  # note` doesn't crash startup.
+        """
+        if v is None or isinstance(v, list):
+            return v
+        s = re.split(r"\s+#", str(v).strip(), maxsplit=1)[0].strip()
+        if not s:
+            return []
+        if s.startswith("["):
+            return json.loads(s)
+        return [item.strip() for item in s.split(",") if item.strip()]
 
     @property
     def chroma_dir(self) -> Path:
